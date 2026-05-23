@@ -421,6 +421,7 @@ function loadQuestion() {
 
   // Notify players
   db.ref(`rooms/${roomCode}`).update({
+    state: 'playing',
     question: currentQ,
     questionText: q.question,
     options: q.options,
