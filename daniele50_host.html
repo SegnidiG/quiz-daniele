@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Daniele 50 anni — HOST</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --gold: #F5C842;
+    --gold2: #E8A800;
+    --red: #C0392B;
+    --dark: #0a0a0a;
+    --dark2: #111111;
+    --dark3: #1a1a1a;
+    --text: #f0ede6;
+    --muted: #888;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem; text-align: center;
+  }
+  #setup-screen h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 8vw, 96px);
+    color: var(--gold);
+    letter-spacing: 4px;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  #setup-screen .subtitle {
+    font-size: 18px; color: var(--muted); margin-bottom: 2.5rem; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .setup-card {
+    background: var(--dark3); border: 1px solid #333; border-radius: var(--radius);
+    padding: 2rem 2.5rem; max-width: 500px; width: 100%; margin-bottom: 1rem;
+  }
+  .setup-card label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .setup-card input {
+    width: 100%; background: #222; border: 1px solid #444; border-radius: 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px;
+    padding: 10px 14px; outline: none; transition: border-color .2s;
+  }
+  .setup-card input:focus { border-color: var(--gold); }
+  .btn-gold {
+    background: var(--gold); color: #000; border: none; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    padding: 12px 32px; cursor: pointer; transition: background .2s, transform .1s;
+    width: 100%; margin-top: 1rem;
+  }
+  .btn-gold:hover { background: var(--gold2); }
+  .btn-gold:active { transform: scale(0.98); }
+
+  /* LOBBY SCREEN */
+  #lobby-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+  #lobby-screen h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 6vw, 80px); color: var(--gold); letter-spacing: 3px; margin-bottom: 0.5rem; }
+  .room-code-display {
+    font-family: 'Bebas Neue', sans-serif; font-size: clamp(72px, 12vw, 140px);
+    color: #fff; letter-spacing: 12px; line-height: 1;
+    text-shadow: 0 0 60px rgba(245,200,66,0.3);
+    margin: 1rem 0;
+  }
+  .qr-box {
+    background: #fff; border-radius: var(--radius); padding: 16px;
+    display: inline-block; margin: 1.5rem auto;
+  }
+  .qr-box img { display: block; width: 180px; height: 180px; }
+  .players-grid {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    max-width: 700px; margin: 1rem auto;
+  }
+  .player-chip {
+    background: var(--dark3); border: 1px solid var(--gold); border-radius: 100px;
+    padding: 6px 18px; font-size: 14px; font-weight: 500;
+    animation: popIn .3s ease;
+  }
+  @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .lobby-hint { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* GAME SCREEN */
+  #game-screen {
+    display: none; flex-direction: column; min-height: 100vh; padding: 2rem;
+  }
+  .game-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .q-counter { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .timer-ring {
+    width: 72px; height: 72px; position: relative;
+  }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring circle { fill: none; stroke-width: 5; }
+  .timer-ring .track { stroke: #333; }
+  .timer-ring .progress { stroke: var(--gold); stroke-dasharray: 188; stroke-dashoffset: 0; transition: stroke-dashoffset .9s linear, stroke .5s; stroke-linecap: round; }
+  .timer-ring .timer-text {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--text);
+  }
+  .score-pill { background: var(--dark3); border: 1px solid #333; border-radius: 100px; padding: 6px 16px; font-size: 13px; color: var(--muted); }
+  .anecdote-box {
+    background: var(--dark3); border-left: 4px solid var(--gold);
+    border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+    font-size: 15px; line-height: 1.6; color: #ccc; font-style: italic;
+    display: none;
+  }
+  .question-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(32px, 5vw, 60px);
+    letter-spacing: 1px; line-height: 1.1;
+    color: #fff; margin-bottom: 2rem;
+    flex: 1;
+  }
+  .options-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.5rem;
+  }
+  .option-btn {
+    background: var(--dark3); border: 1.5px solid #333; border-radius: var(--radius);
+    padding: 1.25rem 1.5rem; font-family: 'DM Sans', sans-serif;
+    font-size: 18px; font-weight: 500; color: var(--text);
+    cursor: default; transition: background .3s, border-color .3s;
+    text-align: left; display: flex; align-items: center; gap: 12px;
+  }
+  .option-letter {
+    background: #333; border-radius: 6px; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px; flex-shrink: 0;
+  }
+  .option-btn.correct { background: #1a3d1a; border-color: #2ecc71; }
+  .option-btn.correct .option-letter { background: #2ecc71; color: #000; }
+  .option-btn.wrong { background: #3d1a1a; border-color: var(--red); }
+  .option-btn.wrong .option-letter { background: var(--red); color: #fff; }
+  .answer-bar {
+    display: flex; gap: 6px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .ans-dot {
+    width: 12px; height: 12px; border-radius: 50%; background: var(--gold);
+    animation: popIn .2s ease;
+  }
+  .answers-label { font-size: 13px; color: var(--muted); margin-right: 4px; }
+  .btn-next {
+    background: var(--gold); color: #000; border: none; border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px;
+    padding: 14px 40px; cursor: pointer; transition: background .2s, transform .1s;
+    align-self: flex-end;
+  }
+  .btn-next:hover { background: var(--gold2); }
+
+  /* LEADERBOARD */
+  #leaderboard-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+  #leaderboard-screen h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 8vw, 96px); color: var(--gold); letter-spacing: 4px; margin-bottom: 2rem; }
+  .leaderboard-list { width: 100%; max-width: 600px; }
+  .lb-row {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--dark3); border: 1px solid #333; border-radius: var(--radius);
+    padding: 1rem 1.5rem; margin-bottom: 10px;
+    animation: slideIn .4s ease both;
+  }
+  .lb-row:nth-child(1) { border-color: var(--gold); }
+  .lb-row:nth-child(2) { border-color: #aaa; }
+  .lb-row:nth-child(3) { border-color: #a0522d; }
+  @keyframes slideIn { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .lb-rank { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--muted); width: 36px; }
+  .lb-row:nth-child(1) .lb-rank { color: var(--gold); font-size: 32px; }
+  .lb-name { flex: 1; font-size: 18px; font-weight: 500; text-align: left; }
+  .lb-score { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--gold); }
+  .btn-restart {
+    margin-top: 2rem; background: transparent; border: 1.5px solid var(--gold);
+    color: var(--gold); border-radius: 8px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; padding: 12px 36px; cursor: pointer;
+  }
+  .btn-restart:hover { background: var(--gold); color: #000; }
+
+  /* REVEAL */
+  .reveal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; padding: 2rem; text-align: center;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .reveal-overlay h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 6vw, 72px); color: var(--gold); margin-bottom: 1rem; }
+  .reveal-overlay p { font-size: 20px; line-height: 1.7; color: var(--text); max-width: 700px; }
+  .reveal-overlay .btn-next { margin-top: 2rem; }
+
+  /* Confetti canvas */
+  #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <h1>Quiz Daniele</h1>
+  <p class="subtitle">50 anni di legenda</p>
+  <div class="setup-card">
+    <label>URL Firebase Realtime Database</label>
+    <input type="text" id="firebase-url" placeholder="https://xxx-default-rtdb.europe-west1.firebasedatabase.app" value="https://si-la-vita-default-rtdb.europe-west1.firebasedatabase.app">
+    <button class="btn-gold" onclick="startSetup()">Crea stanza & inizia →</button>
+  </div>
+  <p style="font-size:13px; color: var(--muted);">Sei il presentatore. Proietta questa schermata sul televisore.</p>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby-screen">
+  <h1>🎂 Chi conosce Daniele?</h1>
+  <p style="color: var(--muted); font-size:16px; text-transform:uppercase; letter-spacing:2px; margin-bottom:0.5rem;">Codice stanza</p>
+  <div class="room-code-display" id="room-code-display">----</div>
+  <div class="qr-box">
+    <img id="qr-img" src="" alt="QR code per partecipare">
+  </div>
+  <p class="lobby-hint">Oppure vai su: <strong id="join-url-display"></strong></p>
+  <div id="players-grid" class="players-grid"></div>
+  <button class="btn-gold" style="max-width:300px" onclick="startGame()">▶ Inizia il quiz!</button>
+</div>
+
+<!-- GAME -->
+<div id="game-screen">
+  <div class="game-header">
+    <div class="q-counter" id="q-counter">Domanda 1 / 10</div>
+    <div class="timer-ring">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle class="track" cx="36" cy="36" r="30"/>
+        <circle class="progress" id="timer-circle" cx="36" cy="36" r="30"/>
+      </svg>
+      <div class="timer-text" id="timer-text">20</div>
+    </div>
+    <div class="score-pill" id="answers-count">0 risposte</div>
+  </div>
+  <div class="anecdote-box" id="anecdote-box"></div>
+  <div class="question-text" id="question-text"></div>
+  <div class="options-grid" id="options-grid"></div>
+  <div class="answer-bar">
+    <span class="answers-label">Risposte live:</span>
+    <div id="answer-dots"></div>
+  </div>
+  <button class="btn-next" id="btn-next" onclick="revealAnswer()" style="display:none">Rivela risposta</button>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="leaderboard-screen">
+  <h1>🏆 Classifica finale</h1>
+  <div class="leaderboard-list" id="leaderboard-list"></div>
+  <button class="btn-restart" onclick="location.reload()">Nuova partita</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    question: "Da piccolo, come correva Daniele secondo i suoi compagni?",
+    options: ["Come un ghepardo", "Come una scimmietta", "Come un robot", "Come un centometrista"],
+    correct: 1,
+    anecdote: "Le sue braccia erano così più lunghe delle gambe che quando correva aveva uno stile tutto suo... decisamente primordiale! 🐒"
+  },
+  {
+    question: "In gita scolastica, cosa fece Daniele con la sua bottiglia d'acqua?",
+    options: ["La regalò a tutti", "La finì subito", "La vendette a bicchieri ai compagni", "La dimenticò sull'autobus"],
+    correct: 2,
+    anecdote: "Unico con l'acqua mentre gli altri morivano di sete, Daniele ebbe la brillante intuizione imprenditoriale: vendere l'acqua a bicchieri. Il futuro di Wall Street era lì, in gita! 💰"
+  },
+  {
+    question: "Daniele pianse nel 1984 per...",
+    options: ["La fine di un film", "Una sconfitta della Roma in finale di Coppa dei Campioni", "Un brutto voto a scuola", "La rottura del suo motorino"],
+    correct: 1,
+    anecdote: "Roma-Liverpool, finale di Coppa dei Campioni 1984. La Roma perse ai rigori in casa propria. Daniele — tifoso giallorosso da sempre — versò lacrime amare che ancora ricorda. 🐺😢"
+  },
+  {
+    question: "Quale film Daniele cita SEMPRE a memoria (o quasi)?",
+    options: ["Il Padrino", "Pulp Fiction", "Scarface", "C'era una volta in America"],
+    correct: 1,
+    anecdote: "Il monologo di Jules Winnfield con il versetto di Ezechiele 25:17... Daniele lo sa a memoria. Almeno fino ad oggi — dopo 50 anni qualcosa potrebbe sfocarsi! 🎬"
+  },
+  {
+    question: "Qual è la battuta cult di 'Amici miei' che Daniele cita sempre?",
+    options: ["La bisarca", "La supercazzola", "Il Mascetti bis", "Il pesce d'aprile"],
+    correct: 1,
+    anecdote: "«Tarapia tapioco, prematurata la supercazzola con scappellamento a destra?» — Daniele ha fatto propria questa arte della supercazzola e la usa con maestria nelle occasioni più improbabili. 🎭"
+  },
+  {
+    question: "Quale squadra tifa Daniele da sempre?",
+    options: ["Lazio", "Napoli", "Roma", "Juventus"],
+    correct: 2,
+    anecdote: "Giallorosso nel sangue, nella lacrime e nel cuore. Per Daniele la Roma non è una squadra: è una religione. ❤️🐺"
+  },
+  {
+    question: "Come si potrebbe definire il rapporto di Daniele con il denaro?",
+    options: ["Generoso fino all'eccesso", "Imprenditore con spiccato senso degli affari", "Spendaccione seriale", "Indifferente al denaro"],
+    correct: 1,
+    anecdote: "Daniele non è avaro — ha semplicemente un acutissimo senso per gli affari. C'è differenza, ve lo assicura lui stesso. 💼😄"
+  },
+  {
+    question: "In quale anno si svolse la drammatica finale Roma-Liverpool che fece piangere Daniele?",
+    options: ["1982", "1983", "1984", "1985"],
+    correct: 2,
+    anecdote: "30 maggio 1984, Stadio Olimpico di Roma. La Roma padrona di casa perse la sua unica finale di Coppa dei Campioni ai calci di rigore contro il Liverpool. Una ferita aperta per tutti i romanisti della sua generazione. ⚽"
+  },
+  {
+    question: "Chi interpreta Jules Winnfield in Pulp Fiction — il personaggio con il monologo che Daniele sa a memoria?",
+    options: ["Bruce Willis", "John Travolta", "Samuel L. Jackson", "Harvey Keitel"],
+    correct: 2,
+    anecdote: "Samuel L. Jackson nei panni di Jules Winnfield: «Il cammino dell'uomo retto è insidiato da ogni parte dalle iniquità degli esseri egoisti...» — testo che Daniele conosce meglio del codice fiscale! 📖"
+  },
+  {
+    question: "Di quale storico trio comico Daniele è grande fan, seguito dalla Gialappa's Band?",
+    options: ["Toti e Tata", "Aldo Giovanni e Giacomo", "Ficarra e Picone", "Boldi e De Sica"],
+    correct: 1,
+    anecdote: "Aldo Giovanni e Giacomo, con la voce inconfondibile della Gialappa's Band a commentare: un abbinamento perfetto che ha segnato un'epoca. E Daniele era in prima fila ogni volta! 🎙️😂"
+  },
+  {
+    question: "In quale celebre sketch la Gialappa's commentava Aldo, Giovanni e Giacomo come arbitri di calcio?",
+    options: ["Il Grande Fratello arbitrale", "La Terna Arbitrale", "Coppa Italia in famiglia", "Arbitri per caso"],
+    correct: 1,
+    anecdote: "La Terna Arbitrale: Aldo, Giovanni e Giacomo nei panni di arbitri completamente improvvisati, con il commento esilarante della Gialappa's. Daniele conosce ogni battuta a memoria — quasi quanto Pulp Fiction! ⚽😂"
+  },
+  {
+    question: "Chi è 'Rolando', il personaggio cult che Daniele cita dalla Gialappa's?",
+    options: ["Un calciatore inventato", "Il portiere imbranato di Mai dire Gol", "Un arbitro famoso preso in giro", "Il tifoso del piano di sopra"],
+    correct: 2,
+    anecdote: "Rolando Bianchi, e tutti gli altri portieri, calciatori e arbitri passati sotto la lente spietata e geniale di Mai dire Gol: la Gialappa's li ha resi immortali con i loro commenti. Daniele sa a memoria le imitazioni meglio degli originali! 📺🤣"
+  },
+  {
+    question: "Oggi Daniele compie...",
+    options: ["40 anni", "45 anni", "50 anni", "55 anni"],
+    correct: 2,
+    anecdote: "50 anni di storie, risate, lacrime giallorosse, affari geniali, supercazzole e Gialappa's a go-go. Sei una leggenda, Daniele! Auguri! 🎂🥂"
+  }
+];
+
+const TIMER_SECONDS = 20;
+let db, roomCode, currentQ = 0, timer, timerVal, players = {}, answersThisRound = {};
+let gameState = 'lobby';
+
+function startSetup() {
+  const url = document.getElementById('firebase-url').value.trim();
+  if (!url) return alert('Inserisci l\'URL Firebase!');
+  
+  const firebaseConfig = { databaseURL: url };
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+
+  roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+  document.getElementById('room-code-display').textContent = roomCode;
+
+  const joinUrl = `${location.origin}/daniele50_player.html?room=${roomCode}&db=${encodeURIComponent(url)}`;
+  document.getElementById('join-url-display').textContent = joinUrl;
+  document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(joinUrl)}`;
+
+  // Init room
+  db.ref(`rooms/${roomCode}`).set({ state: 'lobby', question: -1, players: {} });
+
+  // Listen for players
+  db.ref(`rooms/${roomCode}/players`).on('value', snap => {
+    players = snap.val() || {};
+    renderPlayers();
+  });
+
+  // Listen for answers
+  db.ref(`rooms/${roomCode}/answers`).on('value', snap => {
+    const data = snap.val() || {};
+    answersThisRound = data[currentQ] || {};
+    renderAnswerDots();
+    updateAnswerCount();
+  });
+
+  show('lobby-screen');
+}
+
+function renderPlayers() {
+  const grid = document.getElementById('players-grid');
+  grid.innerHTML = Object.values(players).map(p => `<div class="player-chip">🎉 ${p.name}</div>`).join('');
+}
+
+function show(id) {
+  ['setup-screen','lobby-screen','game-screen','leaderboard-screen'].forEach(s => {
+    const el = document.getElementById(s);
+    el.style.display = (s === id) ? 'flex' : 'none';
+  });
+}
+
+function startGame() {
+  currentQ = 0;
+  show('game-screen');
+  db.ref(`rooms/${roomCode}`).update({ state: 'playing' });
+  loadQuestion();
+}
+
+function loadQuestion() {
+  if (currentQ >= QUESTIONS.length) { showLeaderboard(); return; }
+  answersThisRound = {};
+  const q = QUESTIONS[currentQ];
+
+  document.getElementById('q-counter').textContent = `Domanda ${currentQ+1} / ${QUESTIONS.length}`;
+  document.getElementById('anecdote-box').style.display = 'none';
+  document.getElementById('question-text').textContent = q.question;
+  document.getElementById('answer-dots').innerHTML = '';
+  document.getElementById('answers-count').textContent = '0 risposte';
+  document.getElementById('btn-next').style.display = 'none';
+
+  const letters = ['A','B','C','D'];
+  document.getElementById('options-grid').innerHTML = q.options.map((opt, i) =>
+    `<div class="option-btn" id="opt-${i}">
+      <div class="option-letter">${letters[i]}</div>
+      <span>${opt}</span>
+    </div>`
+  ).join('');
+
+  // Notify players
+  db.ref(`rooms/${roomCode}`).update({
+    question: currentQ,
+    questionText: q.question,
+    options: q.options,
+    answered: null
+  });
+
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timer);
+  timerVal = TIMER_SECONDS;
+  const circle = document.getElementById('timer-circle');
+  const circumference = 188;
+
+  timer = setInterval(() => {
+    timerVal--;
+    document.getElementById('timer-text').textContent = timerVal;
+    circle.style.strokeDashoffset = circumference * (1 - timerVal / TIMER_SECONDS);
+    if (timerVal <= 5) circle.style.stroke = '#e74c3c';
+    else circle.style.stroke = 'var(--gold)';
+    if (timerVal <= 0) {
+      clearInterval(timer);
+      db.ref(`rooms/${roomCode}`).update({ state: 'reveal' });
+      document.getElementById('btn-next').style.display = 'block';
+    }
+  }, 1000);
+}
+
+function updateAnswerCount() {
+  const count = Object.keys(answersThisRound).length;
+  document.getElementById('answers-count').textContent = `${count} rispost${count===1?'a':'e'}`;
+}
+
+function renderAnswerDots() {
+  const dots = document.getElementById('answer-dots');
+  const count = Object.keys(answersThisRound).length;
+  dots.innerHTML = Array(count).fill('<div class="ans-dot"></div>').join('');
+}
+
+function revealAnswer() {
+  clearInterval(timer);
+  const q = QUESTIONS[currentQ];
+  
+  q.options.forEach((_, i) => {
+    const btn = document.getElementById(`opt-${i}`);
+    if (i === q.correct) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+  });
+
+  // Score players
+  const promises = [];
+  Object.entries(answersThisRound).forEach(([pid, ans]) => {
+    if (parseInt(ans) === q.correct) {
+      promises.push(db.ref(`rooms/${roomCode}/players/${pid}/score`).transaction(s => (s||0) + 100));
+    }
+  });
+  Promise.all(promises);
+
+  // Show anecdote overlay
+  showRevealOverlay(q);
+}
+
+function showRevealOverlay(q) {
+  const overlay = document.createElement('div');
+  overlay.className = 'reveal-overlay';
+  overlay.innerHTML = `
+    <h2>💡 L'aneddoto</h2>
+    <p>${q.anecdote}</p>
+    <button class="btn-next" onclick="nextQuestion(this.closest('.reveal-overlay'))">
+      ${currentQ + 1 < QUESTIONS.length ? 'Prossima domanda →' : 'Classifica finale 🏆'}
+    </button>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function nextQuestion(overlay) {
+  overlay.remove();
+  currentQ++;
+  loadQuestion();
+}
+
+function showLeaderboard() {
+  show('leaderboard-screen');
+  db.ref(`rooms/${roomCode}`).update({ state: 'finished' });
+
+  const sorted = Object.values(players).sort((a,b) => (b.score||0) - (a.score||0));
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('leaderboard-list').innerHTML = sorted.slice(0,10).map((p,i) =>
+    `<div class="lb-row" style="animation-delay:${i*0.1}s">
+      <div class="lb-rank">${medals[i] || (i+1)}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-score">${p.score||0} pt</div>
+    </div>`
+  ).join('');
+
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const pieces = Array.from({length:120}, () => ({
+    x: Math.random()*canvas.width, y: -10,
+    r: Math.random()*8+4,
+    color: ['#F5C842','#C0392B','#2ecc71','#3498db','#e056fd'][Math.floor(Math.random()*5)],
+    vx: (Math.random()-0.5)*4, vy: Math.random()*4+2,
+    rot: Math.random()*360, vrot: (Math.random()-0.5)*6
+  }));
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);
+      ctx.restore();
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vrot; p.vy+=0.05;
+    });
+    if (pieces.some(p=>p.y<canvas.height)) requestAnimationFrame(draw);
+  }
+  draw();
+}
+</script>
+</body>
+</html>
