@@ -190,26 +190,28 @@ function joinRoom() {
     document.getElementById('waiting-name').textContent = `Ciao, ${playerName}! 🎉`;
     show('waiting-screen');
 
-    // Listen for question changes separately
-    db.ref(`rooms/${roomCode}/question`).on('value', snap => {
-      const q = snap.val();
-      if (q === null || q < 0) return;
-      if (q !== currentQ) {
-        currentQ = q;
-        myAnswer = null;
-        // fetch full room data for question text and options
-        db.ref(`rooms/${roomCode}`).once('value').then(rsnap => {
-          const room = rsnap.val();
-          if (room && room.state === 'playing') showQuestion(room);
-        });
-      }
-    });
+    // Single robust listener on full room object
+    db.ref(`rooms/${roomCode}`).on('value', snap => {
+      const room = snap.val();
+      if (!room) return;
 
-    // Listen for state changes
-    db.ref(`rooms/${roomCode}/state`).on('value', snap => {
-      const state = snap.val();
-      if (state === 'reveal') showReveal();
-      else if (state === 'finished') showFinished();
+      if (room.state === 'finished') {
+        showFinished();
+        return;
+      }
+
+      if (room.state === 'reveal') {
+        showReveal();
+        return;
+      }
+
+      if (room.state === 'playing' && typeof room.question === 'number' && room.question >= 0) {
+        if (room.question !== currentQ) {
+          currentQ = room.question;
+          myAnswer = null;
+          showQuestion(room);
+        }
+      }
     });
   });
 }
