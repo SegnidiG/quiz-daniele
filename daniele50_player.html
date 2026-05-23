@@ -3,267 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Quiz Daniele 50 — Partecipa!</title>
+<title>Quiz Daniele 50 — Gioca!</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
-  :root {
-    --gold: #F5C842;
-    --gold2: #E8A800;
-    --red: #C0392B;
-    --dark: #0a0a0a;
-    --dark2: #111111;
-    --dark3: #1a1a1a;
-    --text: #f0ede6;
-    --muted: #888;
-    --radius: 14px;
-    --green: #2ecc71;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    background: var(--dark); color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh; min-height: -webkit-fill-available;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 1.5rem; text-align: center;
-    overscroll-behavior: none;
-  }
-
-  /* JOIN */
-  #join-screen { width: 100%; max-width: 380px; }
-  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--gold); letter-spacing: 3px; margin-bottom: 0.25rem; }
-  .logo-sub { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2.5rem; }
-  .field-group { text-align: left; margin-bottom: 1rem; }
-  .field-group label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
-  .field-group input {
-    width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 10px;
-    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px;
-    padding: 14px 16px; outline: none; transition: border-color .2s;
-    text-transform: uppercase; letter-spacing: 2px;
-  }
-  .field-group input#player-name { text-transform: none; letter-spacing: 0; }
-  .field-group input:focus { border-color: var(--gold); }
-  .btn-join {
-    width: 100%; background: var(--gold); color: #000; border: none; border-radius: 10px;
-    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px;
-    padding: 16px; cursor: pointer; margin-top: 0.5rem;
-    transition: background .2s, transform .1s;
-  }
-  .btn-join:active { transform: scale(0.97); background: var(--gold2); }
-
-  /* WAITING */
-  #waiting-screen { display: none; width: 100%; max-width: 380px; }
-  .pulse-ring {
-    width: 80px; height: 80px; border-radius: 50%;
-    border: 3px solid var(--gold); margin: 0 auto 1.5rem;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.6; }
-  }
-  .waiting-name { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--gold); margin-bottom: 0.5rem; }
-  .waiting-hint { font-size: 15px; color: var(--muted); }
-
-  /* QUESTION */
-  #question-screen { display: none; width: 100%; max-width: 420px; }
-  .q-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-  .q-text { font-family: 'Bebas Neue', sans-serif; font-size: clamp(22px, 6vw, 32px); line-height: 1.2; margin-bottom: 2rem; color: #fff; }
-  .options-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-  .opt {
-    background: var(--dark3); border: 1.5px solid #333; border-radius: var(--radius);
-    padding: 16px 20px; font-size: 16px; font-weight: 500;
-    cursor: pointer; transition: background .15s, border-color .15s, transform .1s;
-    display: flex; align-items: center; gap: 14px; text-align: left;
-  }
-  .opt:active { transform: scale(0.97); }
-  .opt:hover { border-color: var(--gold); }
-  .opt-letter {
-    background: #333; border-radius: 6px; width: 34px; height: 34px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 20px;
-  }
-  .opt.selected { background: #2a2500; border-color: var(--gold); }
-  .opt.selected .opt-letter { background: var(--gold); color: #000; }
-  .opt.correct { background: #1a3d1a; border-color: var(--green); pointer-events: none; }
-  .opt.correct .opt-letter { background: var(--green); color: #000; }
-  .opt.wrong { background: #2a1010; border-color: var(--red); pointer-events: none; }
-  .opt.disabled { pointer-events: none; opacity: 0.6; }
-
-  /* ANSWERED */
-  #answered-screen { display: none; width: 100%; max-width: 380px; }
-  .answer-icon { font-size: 64px; margin-bottom: 1rem; }
-  .answer-msg { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; margin-bottom: 0.5rem; }
-  .answer-sub { font-size: 15px; color: var(--muted); }
-
-  /* FINISHED */
-  #finished-screen { display: none; width: 100%; max-width: 380px; }
-  .final-score { font-family: 'Bebas Neue', sans-serif; font-size: 72px; color: var(--gold); margin: 1rem 0; }
-  .final-label { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-
-  .error-msg { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: #0a0a0a; color: #f0ede6; font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; text-align: center; overscroll-behavior: none; }
+.screen { display: none; width: 100%; max-width: 420px; }
+.screen.active { display: block; }
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: #F5C842; letter-spacing: 3px; }
+.sub { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2.5rem; }
+label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; text-align: left; margin-top: 1rem; }
+input { width: 100%; background: #1a1a1a; border: 1px solid #444; border-radius: 10px; color: #f0ede6; font-family: 'DM Sans', sans-serif; font-size: 16px; padding: 14px 16px; outline: none; }
+input:focus { border-color: #F5C842; }
+.btn { width: 100%; background: #F5C842; color: #000; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; padding: 16px; cursor: pointer; margin-top: 1.5rem; }
+.btn:active { background: #E8A800; transform: scale(0.97); }
+.err { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+.pulse { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #F5C842; margin: 0 auto 1.5rem; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.1);opacity:0.5} }
+.big-name { font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: #F5C842; margin-bottom: 0.5rem; }
+.hint { font-size: 15px; color: #888; line-height: 1.6; }
+.q-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; }
+.q-text { font-family: 'Bebas Neue', sans-serif; font-size: clamp(22px, 6vw, 32px); line-height: 1.2; margin-bottom: 1.5rem; color: #fff; }
+.opts { display: flex; flex-direction: column; gap: 12px; }
+.opt { background: #1a1a1a; border: 1.5px solid #333; border-radius: 14px; padding: 16px 20px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 14px; text-align: left; transition: border-color .15s; }
+.opt:active { transform: scale(0.97); }
+.opt-l { background: #333; border-radius: 6px; width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
+.opt.selected { background: #2a2500; border-color: #F5C842; }
+.opt.selected .opt-l { background: #F5C842; color: #000; }
+.opt.done { pointer-events: none; opacity: 0.5; }
+.big-icon { font-size: 64px; margin-bottom: 1rem; }
+.big-msg { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; margin-bottom: 0.5rem; }
+.final-score { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: #F5C842; margin: 1rem 0; }
 </style>
 </head>
 <body>
 
-<!-- JOIN -->
-<div id="join-screen">
+<div id="s-join" class="screen active">
   <div class="logo">🎂 Quiz</div>
-  <div class="logo-sub">Chi conosce Daniele?</div>
-  <div class="field-group">
-    <label>Il tuo nome</label>
-    <input type="text" id="player-name" placeholder="Come ti chiami?" autocomplete="off" maxlength="20">
-  </div>
-  <div class="field-group">
-    <label>Codice stanza</label>
-    <input type="text" id="room-code" placeholder="Es. AB12" maxlength="4" autocomplete="off">
-  </div>
-  <button class="btn-join" onclick="joinRoom()">Entra nel quiz →</button>
-  <p class="error-msg" id="error-msg"></p>
+  <div class="sub">Chi conosce Daniele?</div>
+  <label>Il tuo nome</label>
+  <input type="text" id="inp-name" placeholder="Come ti chiami?" maxlength="20" autocomplete="off">
+  <label>Codice stanza</label>
+  <input type="text" id="inp-room" placeholder="Es. AB12" maxlength="4" autocomplete="off" style="text-transform:uppercase; letter-spacing:3px;">
+  <button class="btn" onclick="join()">Entra nel quiz →</button>
+  <p class="err" id="err"></p>
 </div>
 
-<!-- WAITING -->
-<div id="waiting-screen">
-  <div class="pulse-ring"></div>
-  <div class="waiting-name" id="waiting-name">Ciao!</div>
-  <div class="waiting-hint">In attesa che il quiz inizi...<br>Guarda lo schermo grande! 🎉</div>
+<div id="s-wait" class="screen">
+  <div class="pulse"></div>
+  <div class="big-name" id="w-name">Ciao!</div>
+  <div class="hint">In attesa che il quiz inizi...<br>Guarda lo schermo grande! 🎉</div>
 </div>
 
-<!-- QUESTION -->
-<div id="question-screen">
+<div id="s-question" class="screen">
   <div class="q-label" id="q-label">Domanda 1</div>
   <div class="q-text" id="q-text"></div>
-  <div class="options-list" id="options-list"></div>
+  <div class="opts" id="opts"></div>
 </div>
 
-<!-- ANSWERED -->
-<div id="answered-screen">
-  <div class="answer-icon" id="answer-icon">⏳</div>
-  <div class="answer-msg" id="answer-msg">Risposta inviata!</div>
-  <div class="answer-sub" id="answer-sub">In attesa degli altri...</div>
+<div id="s-answered" class="screen">
+  <div class="big-icon" id="ans-icon">✅</div>
+  <div class="big-msg" id="ans-msg">Risposta inviata!</div>
+  <div class="hint" id="ans-hint">In attesa... guarda lo schermo! 👀</div>
 </div>
 
-<!-- FINISHED -->
-<div id="finished-screen">
+<div id="s-end" class="screen">
   <div style="font-size:48px; margin-bottom:0.5rem">🏆</div>
-  <div class="final-label">Il tuo punteggio finale</div>
+  <div style="font-size:14px; color:#888; text-transform:uppercase; letter-spacing:1px;">Il tuo punteggio</div>
   <div class="final-score" id="final-score">0</div>
-  <div class="final-label">punti</div>
-  <p style="margin-top:2rem; color:var(--muted); font-size:15px">Guarda la classifica sullo schermo grande! 🎉</p>
+  <div style="font-size:14px; color:#888;">punti</div>
+  <p style="margin-top:2rem; color:#888; font-size:15px;">Guarda la classifica sullo schermo! 🎉</p>
 </div>
 
 <script>
 const params = new URLSearchParams(location.search);
-let roomCode = params.get('room') || '';
-let dbUrl = params.get('db') || '';
-let db, playerId, playerName, myAnswer = null, currentQ = -1;
+const preRoom = params.get('room') || '';
+const preDb = params.get('db') || 'https://si-la-vita-default-rtdb.europe-west1.firebasedatabase.app';
+if (preRoom) { document.getElementById('inp-room').value = preRoom; }
 
-if (roomCode) document.getElementById('room-code').value = roomCode;
+let db, pid, myName, myRoom, lastPhase = '', lastQ = -1, myAnswer = null;
 
 function show(id) {
-  ['join-screen','waiting-screen','question-screen','answered-screen','finished-screen'].forEach(s => {
-    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
-  });
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
 }
 
-function joinRoom() {
-  playerName = document.getElementById('player-name').value.trim();
-  roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+function join() {
+  myName = document.getElementById('inp-name').value.trim();
+  myRoom = document.getElementById('inp-room').value.trim().toUpperCase();
+  if (!myName) { document.getElementById('err').textContent = 'Inserisci il tuo nome!'; return; }
+  if (myRoom.length < 2) { document.getElementById('err').textContent = 'Inserisci il codice stanza!'; return; }
+  document.getElementById('err').textContent = '';
 
-  if (!playerName) { setError('Inserisci il tuo nome!'); return; }
-  if (roomCode.length < 2) { setError('Inserisci il codice stanza!'); return; }
-
-  setError('');
-
-  const firebaseConfig = { databaseURL: dbUrl || `https://si-la-vita-default-rtdb.europe-west1.firebasedatabase.app` };
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  if (!firebase.apps.length) firebase.initializeApp({ databaseURL: preDb });
   db = firebase.database();
 
-  // Check room exists
-  db.ref(`rooms/${roomCode}`).once('value').then(snap => {
-    if (!snap.exists()) { setError('Stanza non trovata. Controlla il codice!'); return; }
-
-    playerId = 'p_' + Math.random().toString(36).substring(2, 10);
-    db.ref(`rooms/${roomCode}/players/${playerId}`).set({ name: playerName, score: 0 });
-
-    document.getElementById('waiting-name').textContent = `Ciao, ${playerName}! 🎉`;
-    show('waiting-screen');
-
-    // Single robust listener on full room object
-    db.ref(`rooms/${roomCode}`).on('value', snap => {
-      const room = snap.val();
-      if (!room) return;
-
-      if (room.state === 'finished') {
-        showFinished();
-        return;
-      }
-
-      if (room.state === 'reveal') {
-        showReveal();
-        return;
-      }
-
-      if (room.state === 'playing' && typeof room.question === 'number' && room.question >= 0) {
-        if (room.question !== currentQ) {
-          currentQ = room.question;
-          myAnswer = null;
-          showQuestion(room);
-        }
-      }
-    });
+  db.ref(`r/${myRoom}`).once('value').then(snap => {
+    if (!snap.exists()) { document.getElementById('err').textContent = 'Stanza non trovata!'; return; }
+    pid = 'p' + Date.now();
+    db.ref(`r/${myRoom}/players/${pid}`).set({ n: myName, s: 0 });
+    document.getElementById('w-name').textContent = `Ciao, ${myName}! 🎉`;
+    show('s-wait');
+    listenRoom();
   });
 }
 
-function setError(msg) {
-  document.getElementById('error-msg').textContent = msg;
+function listenRoom() {
+  db.ref(`r/${myRoom}`).on('value', snap => {
+    const d = snap.val();
+    if (!d) return;
+    const phase = d.phase;
+    const q = d.q;
+
+    if (phase === 'finished') {
+      db.ref(`r/${myRoom}/players/${pid}/s`).once('value').then(s => {
+        document.getElementById('final-score').textContent = s.val() || 0;
+        show('s-end');
+      });
+      return;
+    }
+
+    if (phase === 'reveal') {
+      if (myAnswer === null) {
+        document.getElementById('ans-icon').textContent = '⏰';
+        document.getElementById('ans-msg').textContent = 'Tempo scaduto!';
+        document.getElementById('ans-hint').textContent = 'Guarda la risposta sullo schermo!';
+      }
+      show('s-answered');
+      return;
+    }
+
+    if (phase === 'playing' && q >= 0) {
+      if (q !== lastQ) {
+        lastQ = q;
+        myAnswer = null;
+        showQuestion(d);
+      }
+    }
+  });
 }
 
-function showQuestion(room) {
+function showQuestion(d) {
   const letters = ['A','B','C','D'];
-  document.getElementById('q-label').textContent = `Domanda ${currentQ + 1}`;
-  document.getElementById('q-text').textContent = room.questionText;
-  document.getElementById('options-list').innerHTML = room.options.map((opt, i) =>
-    `<div class="opt" id="popt-${i}" onclick="selectAnswer(${i})">
-      <div class="opt-letter">${letters[i]}</div>
-      <span>${opt}</span>
-    </div>`
-  ).join('');
-  show('question-screen');
+  document.getElementById('q-label').textContent = `Domanda ${d.q + 1}`;
+  document.getElementById('q-text').textContent = d.qt;
+  document.getElementById('opts').innerHTML = (d.opts||[]).map((o,i) => `
+    <div class="opt" id="po${i}" onclick="answer(${i})">
+      <div class="opt-l">${letters[i]}</div>
+      <span>${o}</span>
+    </div>
+  `).join('');
+  show('s-question');
 }
 
-function selectAnswer(idx) {
+function answer(idx) {
   if (myAnswer !== null) return;
   myAnswer = idx;
-
-  document.querySelectorAll('.opt').forEach((el, i) => {
-    el.classList.add('disabled');
+  document.querySelectorAll('.opt').forEach((el,i) => {
+    el.classList.add('done');
     if (i === idx) el.classList.add('selected');
   });
-
-  db.ref(`rooms/${roomCode}/answers/${currentQ}/${playerId}`).set(idx);
-
-  document.getElementById('answer-icon').textContent = '✅';
-  document.getElementById('answer-msg').textContent = 'Risposta inviata!';
-  document.getElementById('answer-sub').textContent = 'In attesa degli altri...\nGuarda lo schermo! 👀';
-  show('answered-screen');
-}
-
-function showReveal() {
-  if (myAnswer === null) {
-    document.getElementById('answer-icon').textContent = '⏰';
-    document.getElementById('answer-msg').textContent = 'Tempo scaduto!';
-    document.getElementById('answer-sub').textContent = 'Guarda la risposta sullo schermo!';
-    show('answered-screen');
-  }
-}
-
-function showFinished() {
-  db.ref(`rooms/${roomCode}/players/${playerId}/score`).once('value').then(snap => {
-    document.getElementById('final-score').textContent = snap.val() || 0;
-    show('finished-screen');
-  });
+  db.ref(`r/${myRoom}/answers/${lastQ}/${pid}`).set(idx);
+  document.getElementById('ans-icon').textContent = '✅';
+  document.getElementById('ans-msg').textContent = 'Risposta inviata!';
+  document.getElementById('ans-hint').textContent = 'In attesa degli altri... guarda lo schermo! 👀';
+  show('s-answered');
 }
 </script>
 </body>
