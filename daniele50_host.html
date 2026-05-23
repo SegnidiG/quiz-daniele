@@ -4,93 +4,172 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quiz Daniele 50 — HOST</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #0a0a0a; color: #f0ede6; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
-.screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+:root {
+  --blue-dark: #020b1a;
+  --blue-mid: #041230;
+  --blue: #0a2060;
+  --gold: #f0c040;
+  --gold2: #c89a00;
+  --gold-light: #fff5c0;
+  --white: #ffffff;
+  --radius: 14px;
+}
+body {
+  background: radial-gradient(ellipse at center, #0a1f50 0%, #020b1a 70%);
+  color: var(--white);
+  font-family: 'Open Sans', sans-serif;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* STARS */
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle var(--d) ease-in-out infinite; opacity: 0; }
+@keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--op)} }
+
+.screen { display: none; position: relative; z-index: 1; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
 .screen.active { display: flex; }
-h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 8vw, 96px); color: #F5C842; letter-spacing: 4px; margin-bottom: 0.5rem; }
-.sub { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2rem; }
-input { width: 100%; max-width: 480px; background: #1a1a1a; border: 1px solid #444; border-radius: 10px; color: #f0ede6; font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 12px 16px; outline: none; margin-bottom: 1rem; }
-.btn { background: #F5C842; color: #000; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; padding: 14px 40px; cursor: pointer; margin-top: 0.5rem; }
-.btn:hover { background: #E8A800; }
-.btn-outline { background: transparent; color: #F5C842; border: 2px solid #F5C842; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; padding: 12px 36px; cursor: pointer; margin-top: 1rem; }
-.code { font-family: 'Bebas Neue', sans-serif; font-size: clamp(80px, 15vw, 160px); color: #fff; letter-spacing: 16px; line-height: 1; margin: 1rem 0; }
-.qr { background: #fff; border-radius: 12px; padding: 14px; display: inline-block; margin: 1rem 0; }
-.qr img { display: block; width: 180px; height: 180px; }
-.players { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 700px; margin: 1rem 0; }
-.chip { background: #1a1a1a; border: 1px solid #F5C842; border-radius: 100px; padding: 6px 18px; font-size: 14px; }
-.q-header { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 900px; margin-bottom: 1.5rem; }
-.q-num { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-.timer-box { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: #F5C842; width: 80px; }
-.timer-box.red { color: #e74c3c; }
-.ans-count { font-size: 14px; color: #888; }
-.question { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 4vw, 56px); line-height: 1.1; color: #fff; max-width: 900px; margin-bottom: 2rem; }
-.options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 900px; margin-bottom: 1.5rem; }
-.opt { background: #1a1a1a; border: 1.5px solid #333; border-radius: 12px; padding: 1.25rem 1.5rem; font-size: 18px; font-weight: 500; display: flex; align-items: center; gap: 12px; text-align: left; }
-.opt-l { background: #333; border-radius: 6px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 20px; flex-shrink: 0; }
-.opt.correct { background: #1a3d1a; border-color: #2ecc71; }
-.opt.correct .opt-l { background: #2ecc71; color: #000; }
-.opt.wrong { background: #3d1a1a; border-color: #C0392B; }
-.opt.wrong .opt-l { background: #C0392B; }
-.anecdote { background: #1a1a1a; border-left: 4px solid #F5C842; border-radius: 12px; padding: 1.25rem 1.5rem; max-width: 900px; width: 100%; font-size: 16px; line-height: 1.6; color: #ccc; font-style: italic; margin-bottom: 1.5rem; }
-.dots { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
-.dot { width: 12px; height: 12px; border-radius: 50%; background: #F5C842; }
-.lb-row { display: flex; align-items: center; gap: 16px; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 10px; width: 100%; max-width: 600px; }
-.lb-row:nth-child(1) { border-color: #F5C842; }
+
+/* LOGO / TITLE */
+.show-title { font-family: 'Cinzel', serif; font-size: clamp(28px, 5vw, 56px); font-weight: 700; color: var(--gold); text-shadow: 0 0 40px rgba(240,192,64,0.6), 0 2px 4px rgba(0,0,0,0.8); letter-spacing: 3px; margin-bottom: 0.25rem; }
+.show-sub { font-family: 'Cinzel', serif; font-size: clamp(14px, 2vw, 22px); color: var(--gold-light); letter-spacing: 4px; margin-bottom: 2.5rem; opacity: 0.8; }
+
+/* SETUP */
+.setup-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(240,192,64,0.3); border-radius: var(--radius); padding: 2rem 2.5rem; max-width: 520px; width: 100%; }
+.setup-box input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(240,192,64,0.4); border-radius: 10px; color: #fff; font-family: 'Open Sans', sans-serif; font-size: 14px; padding: 12px 16px; outline: none; margin-bottom: 1rem; }
+.setup-box input:focus { border-color: var(--gold); }
+
+/* BUTTONS */
+.btn-gold { background: linear-gradient(135deg, #f0c040, #c89a00); color: #000; border: none; border-radius: 10px; font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; padding: 14px 40px; cursor: pointer; box-shadow: 0 4px 20px rgba(240,192,64,0.4); transition: all .2s; }
+.btn-gold:hover { box-shadow: 0 4px 30px rgba(240,192,64,0.7); transform: translateY(-1px); }
+.btn-gold:active { transform: scale(0.97); }
+
+/* LOBBY */
+.room-code { font-family: 'Cinzel', serif; font-size: clamp(80px, 14vw, 150px); font-weight: 700; color: var(--gold); letter-spacing: 16px; line-height: 1; text-shadow: 0 0 60px rgba(240,192,64,0.5); margin: 0.5rem 0; }
+.qr-box { background: #fff; border-radius: 12px; padding: 14px; display: inline-block; margin: 1rem 0; box-shadow: 0 0 30px rgba(240,192,64,0.3); }
+.qr-box img { display: block; width: 180px; height: 180px; }
+.players-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 700px; margin: 1rem 0; }
+.player-chip { background: rgba(240,192,64,0.1); border: 1px solid rgba(240,192,64,0.5); border-radius: 100px; padding: 6px 18px; font-size: 14px; color: var(--gold-light); animation: popIn .3s ease; }
+@keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* GAME */
+.game-wrap { width: 100%; max-width: 960px; }
+.game-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+.q-counter { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold); letter-spacing: 2px; }
+.timer-display { font-family: 'Cinzel', serif; font-size: 52px; font-weight: 700; color: var(--gold); min-width: 70px; text-align: center; text-shadow: 0 0 20px rgba(240,192,64,0.5); transition: color .3s; }
+.timer-display.urgent { color: #ff4444; text-shadow: 0 0 20px rgba(255,68,68,0.7); animation: urgentPulse .5s ease-in-out infinite; }
+@keyframes urgentPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+.answers-pill { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 100px; padding: 6px 18px; font-size: 14px; color: rgba(255,255,255,0.7); }
+
+/* QUESTION */
+.question-text { font-family: 'Cinzel', serif; font-size: clamp(22px, 3.5vw, 44px); font-weight: 600; line-height: 1.2; color: #fff; margin-bottom: 2.5rem; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
+/* OPTIONS — WWTBAM style hexagon-like */
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
+.opt-btn {
+  position: relative; background: linear-gradient(135deg, rgba(10,32,96,0.9), rgba(4,18,48,0.95));
+  border: 2px solid rgba(240,192,64,0.5); border-radius: 50px;
+  padding: 1rem 2rem; display: flex; align-items: center; gap: 16px;
+  font-family: 'Open Sans', sans-serif; font-size: clamp(15px, 2vw, 20px); font-weight: 600;
+  color: #fff; cursor: default; transition: all .4s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 15px rgba(0,0,0,0.4);
+}
+.opt-btn::before { content: ''; position: absolute; inset: 0; border-radius: 50px; background: linear-gradient(135deg, rgba(240,192,64,0.05), transparent); }
+.opt-letter { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--gold); min-width: 28px; }
+.opt-separator { width: 1px; height: 28px; background: rgba(240,192,64,0.3); flex-shrink: 0; }
+.opt-btn.correct { background: linear-gradient(135deg, #1a5c1a, #0d3d0d); border-color: #2ecc71; box-shadow: 0 0 30px rgba(46,204,113,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+.opt-btn.wrong { background: linear-gradient(135deg, #5c1a1a, #3d0d0d); border-color: #e74c3c; box-shadow: 0 0 20px rgba(231,76,60,0.3); opacity: 0.7; }
+.opt-btn.highlight { background: linear-gradient(135deg, rgba(240,192,64,0.2), rgba(200,154,0,0.2)); border-color: var(--gold); box-shadow: 0 0 30px rgba(240,192,64,0.4), inset 0 1px 0 rgba(255,255,255,0.1); animation: highlightPulse 1s ease-in-out infinite; }
+@keyframes highlightPulse { 0%,100%{box-shadow:0 0 20px rgba(240,192,64,0.3)} 50%{box-shadow:0 0 50px rgba(240,192,64,0.8)} }
+
+/* ANSWER DOTS */
+.dots-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 1rem 0; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: var(--gold); animation: popIn .2s ease; box-shadow: 0 0 6px rgba(240,192,64,0.6); }
+
+/* BTN REVEAL */
+.btn-reveal { background: linear-gradient(135deg, #f0c040, #c89a00); color: #000; border: none; border-radius: 50px; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; padding: 14px 48px; cursor: pointer; box-shadow: 0 4px 20px rgba(240,192,64,0.5); transition: all .2s; margin-top: 1rem; }
+.btn-reveal:hover { box-shadow: 0 4px 40px rgba(240,192,64,0.8); transform: translateY(-2px); }
+
+/* REVEAL SCREEN */
+.anecdote-box { background: rgba(240,192,64,0.08); border: 1px solid rgba(240,192,64,0.4); border-left: 4px solid var(--gold); border-radius: var(--radius); padding: 1.5rem 2rem; max-width: 900px; width: 100%; font-size: clamp(15px,2vw,20px); line-height: 1.7; color: var(--gold-light); font-style: italic; margin-bottom: 2rem; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+
+/* LEADERBOARD */
+.lb-row { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(240,192,64,0.2); border-radius: var(--radius); padding: 1rem 1.5rem; margin-bottom: 10px; width: 100%; max-width: 640px; animation: slideIn .4s ease both; }
+.lb-row:nth-child(1) { border-color: var(--gold); background: rgba(240,192,64,0.1); }
 .lb-row:nth-child(2) { border-color: #aaa; }
 .lb-row:nth-child(3) { border-color: #a0522d; }
-.lb-rank { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #888; width: 36px; }
-.lb-name { flex: 1; font-size: 18px; font-weight: 500; text-align: left; }
-.lb-score { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: #F5C842; }
+@keyframes slideIn { from{transform:translateX(-30px);opacity:0} to{transform:translateX(0);opacity:1} }
+.lb-rank { font-family: 'Cinzel', serif; font-size: 28px; color: #888; width: 40px; }
+.lb-row:nth-child(1) .lb-rank { color: var(--gold); font-size: 32px; }
+.lb-name { flex: 1; font-size: 20px; font-weight: 600; text-align: left; }
+.lb-score { font-family: 'Cinzel', serif; font-size: 28px; color: var(--gold); }
+
+/* DIVIDER LINE */
+.gold-line { width: 120px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1rem auto; }
+
 #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
 </style>
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
+<div class="stars" id="stars"></div>
 
+<!-- SETUP -->
 <div id="s-setup" class="screen active">
-  <h1>Quiz Daniele</h1>
-  <p class="sub">50 anni di leggenda</p>
-  <input type="text" id="fb-url" value="https://si-la-vita-default-rtdb.europe-west1.firebasedatabase.app" placeholder="URL Firebase">
-  <button class="btn" onclick="setup()">Crea stanza →</button>
-</div>
-
-<div id="s-lobby" class="screen">
-  <h1>Chi conosce Daniele?</h1>
-  <p class="sub">Codice stanza</p>
-  <div class="code" id="code-display"></div>
-  <div class="qr"><img id="qr-img" src="" alt="QR"></div>
-  <p style="color:#888; font-size:13px; margin-bottom:1rem;">oppure vai su: <span id="join-url" style="color:#F5C842"></span></p>
-  <div class="players" id="players-list"></div>
-  <button class="btn" onclick="startGame()">▶ Inizia il quiz!</button>
-</div>
-
-<div id="s-game" class="screen" style="justify-content: flex-start; padding-top: 2rem;">
-  <div class="q-header">
-    <div class="q-num" id="q-num">Domanda 1/13</div>
-    <div class="timer-box" id="timer">20</div>
-    <div class="ans-count" id="ans-count">0 risposte</div>
+  <div class="show-title">🎂 Quiz Daniele</div>
+  <div class="show-sub">50 anni di leggenda</div>
+  <div class="gold-line"></div>
+  <div class="setup-box" style="margin-top:1.5rem">
+    <input type="text" id="fb-url" value="https://si-la-vita-default-rtdb.europe-west1.firebasedatabase.app" placeholder="URL Firebase">
+    <button class="btn-gold" onclick="setup()">Crea stanza →</button>
   </div>
-  <div class="question" id="q-text"></div>
-  <div class="options" id="opts"></div>
-  <div class="dots" id="dots"></div>
-  <button class="btn" id="btn-reveal" onclick="reveal()" style="display:none">Rivela risposta</button>
+  <p style="margin-top:1.5rem; font-size:13px; color:rgba(255,255,255,0.4);">Proietta questa schermata sul televisore</p>
 </div>
 
+<!-- LOBBY -->
+<div id="s-lobby" class="screen">
+  <div class="show-title">Chi conosce Daniele?</div>
+  <div class="show-sub">Scansiona il QR o inserisci il codice</div>
+  <div class="room-code" id="code-display"></div>
+  <div class="qr-box"><img id="qr-img" src="" alt="QR"></div>
+  <p style="font-size:13px; color:rgba(255,255,255,0.4); margin-bottom:1rem;"><span id="join-url"></span></p>
+  <div class="players-grid" id="players-list"></div>
+  <button class="btn-gold" style="margin-top:1rem" onclick="startGame()">▶ Inizia il quiz!</button>
+</div>
+
+<!-- GAME -->
+<div id="s-game" class="screen" style="justify-content:flex-start; padding-top:2rem;">
+  <div class="game-wrap">
+    <div class="game-top">
+      <div class="q-counter" id="q-num">Domanda 1 / 13</div>
+      <div class="timer-display" id="timer">20</div>
+      <div class="answers-pill" id="ans-count">0 risposte</div>
+    </div>
+    <div class="question-text" id="q-text"></div>
+    <div class="options-grid" id="opts"></div>
+    <div class="dots-row" id="dots"></div>
+    <button class="btn-reveal" id="btn-reveal" onclick="reveal()" style="display:none">Rivela risposta</button>
+  </div>
+</div>
+
+<!-- REVEAL -->
 <div id="s-reveal" class="screen">
-  <div class="anecdote" id="anecdote-text"></div>
-  <div class="options" id="opts-reveal" style="max-width:900px; width:100%"></div>
-  <button class="btn" id="btn-next" onclick="nextQ()">Prossima domanda →</button>
+  <div class="anecdote-box" id="anecdote-text"></div>
+  <div class="options-grid" id="opts-reveal" style="max-width:900px; width:100%; margin-bottom:2rem;"></div>
+  <button class="btn-gold" id="btn-next" onclick="nextQ()">Prossima domanda →</button>
 </div>
 
+<!-- END -->
 <div id="s-end" class="screen">
-  <h1>🏆 Classifica finale</h1>
-  <div id="lb-list"></div>
-  <button class="btn-outline" onclick="location.reload()">Nuova partita</button>
+  <div class="show-title">🏆 Classifica Finale</div>
+  <div class="gold-line"></div>
+  <div id="lb-list" style="margin-top:1.5rem; width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+  <button class="btn-gold" style="margin-top:2rem" onclick="location.reload()">Nuova partita</button>
 </div>
 
 <script>
@@ -105,13 +184,126 @@ const Q = [
   { q: "In quale anno si svolse la finale Roma-Liverpool che fece piangere Daniele?", opts: ["1982","1983","1984","1985"], ok: 2, story: "30 maggio 1984, Stadio Olimpico di Roma. La Roma perse la sua unica finale di Coppa dei Campioni ai rigori contro il Liverpool. Una ferita ancora aperta. ⚽" },
   { q: "Chi interpreta Jules Winnfield in Pulp Fiction?", opts: ["Bruce Willis","John Travolta","Samuel L. Jackson","Harvey Keitel"], ok: 2, story: "Samuel L. Jackson nei panni di Jules Winnfield — testo che Daniele conosce meglio del codice fiscale! 📖" },
   { q: "Di quale storico trio comico Daniele è grande fan, seguito dalla Gialappa's?", opts: ["Toti e Tata","Aldo Giovanni e Giacomo","Ficarra e Picone","Boldi e De Sica"], ok: 1, story: "Aldo Giovanni e Giacomo con la voce della Gialappa's: un abbinamento perfetto che ha segnato un'epoca. E Daniele era in prima fila! 🎙️😂" },
-  { q: "In quale celebre sketch la Gialappa's commentava Aldo, Giovanni e Giacomo come arbitri?", opts: ["Il Grande Fratello arbitrale","La Terna Arbitrale","Coppa Italia in famiglia","Arbitri per caso"], ok: 1, story: "La Terna Arbitrale: Aldo, Giovanni e Giacomo arbitri improvvisati, con il commento della Gialappa's. Daniele conosce ogni battuta — quasi quanto Pulp Fiction! ⚽😂" },
-  { q: "Cosa rappresenta 'Rolando' nel mondo della Gialappa's?", opts: ["Un calciatore inventato","Il portiere imbranato di Mai dire Gol","Un arbitro famoso preso in giro","Il tifoso del piano di sopra"], ok: 2, story: "I portieri e calciatori passati sotto la lente della Gialappa's in Mai dire Gol: immortalati per sempre. Daniele sa le imitazioni meglio degli originali! 📺🤣" },
+  { q: "In quale celebre sketch la Gialappa's commentava Aldo, Giovanni e Giacomo come arbitri?", opts: ["Il Grande Fratello arbitrale","La Terna Arbitrale","Coppa Italia in famiglia","Arbitri per caso"], ok: 1, story: "La Terna Arbitrale: Aldo, Giovanni e Giacomo arbitri improvvisati, con il commento esilarante della Gialappa's. Daniele conosce ogni battuta! ⚽😂" },
+  { q: "Cosa rappresenta 'Rolando' nel mondo della Gialappa's?", opts: ["Un calciatore inventato","Un portiere preso in giro in Mai dire Gol","Un arbitro famoso","Il tifoso del piano di sopra"], ok: 1, story: "I portieri e calciatori immortalati dalla Gialappa's in Mai dire Gol: Daniele sa le imitazioni meglio degli originali! 📺🤣" },
   { q: "Oggi Daniele compie...", opts: ["40 anni","45 anni","50 anni","55 anni"], ok: 2, story: "50 anni di storie, risate, lacrime giallorosse, affari geniali, supercazzole e Gialappa's! Sei una leggenda, Daniele! Auguri! 🎂🥂" }
 ];
 
 const SECS = 20;
-let db, room, pid, cq = 0, tmr, players = {}, answers = {};
+let db, room, cq = 0, tmr, players = {}, answers = {};
+
+// Audio context
+let audioCtx;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTick() {
+  try {
+    const a = getAudio();
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.frequency.value = 800; o.type = 'sine';
+    g.gain.setValueAtTime(0.15, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.1);
+    o.start(); o.stop(a.currentTime + 0.1);
+  } catch(e) {}
+}
+
+function playUrgentTick() {
+  try {
+    const a = getAudio();
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.frequency.value = 1100; o.type = 'square';
+    g.gain.setValueAtTime(0.2, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.08);
+    o.start(); o.stop(a.currentTime + 0.08);
+  } catch(e) {}
+}
+
+function playCorrect() {
+  try {
+    const a = getAudio();
+    [523, 659, 784, 1047].forEach((freq, i) => {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.connect(g); g.connect(a.destination);
+      o.frequency.value = freq; o.type = 'sine';
+      g.gain.setValueAtTime(0, a.currentTime + i * 0.12);
+      g.gain.linearRampToValueAtTime(0.25, a.currentTime + i * 0.12 + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + i * 0.12 + 0.4);
+      o.start(a.currentTime + i * 0.12);
+      o.stop(a.currentTime + i * 0.12 + 0.4);
+    });
+  } catch(e) {}
+}
+
+function playApplause() {
+  try {
+    const a = getAudio();
+    for (let i = 0; i < 80; i++) {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.connect(g); g.connect(a.destination);
+      o.frequency.value = 200 + Math.random() * 3000;
+      o.type = 'sawtooth';
+      const t = a.currentTime + Math.random() * 1.5;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(Math.random() * 0.03, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1 + Math.random() * 0.2);
+      o.start(t); o.stop(t + 0.3);
+    }
+  } catch(e) {}
+}
+
+function playWrong() {
+  try {
+    const a = getAudio();
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.frequency.setValueAtTime(400, a.currentTime);
+    o.frequency.linearRampToValueAtTime(150, a.currentTime + 0.5);
+    o.type = 'sawtooth';
+    g.gain.setValueAtTime(0.3, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.6);
+    o.start(); o.stop(a.currentTime + 0.6);
+  } catch(e) {}
+}
+
+function playFanfare() {
+  try {
+    const a = getAudio();
+    const melody = [523,659,784,659,784,1047];
+    melody.forEach((freq, i) => {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.connect(g); g.connect(a.destination);
+      o.frequency.value = freq; o.type = 'triangle';
+      const t = a.currentTime + i * 0.15;
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      o.start(t); o.stop(t + 0.4);
+    });
+  } catch(e) {}
+}
+
+// Stars background
+function makeStars() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 3 + 1;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--op:${0.3+Math.random()*0.7};animation-delay:${Math.random()*4}s`;
+    c.appendChild(s);
+  }
+}
+makeStars();
 
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -136,12 +328,12 @@ function setup() {
 }
 
 function renderPlayers() {
-  document.getElementById('players-list').innerHTML = Object.values(players).map(p=>`<div class="chip">🎉 ${p.n}</div>`).join('');
+  document.getElementById('players-list').innerHTML = Object.values(players).map(p=>`<div class="player-chip">🎉 ${p.n}</div>`).join('');
 }
 
 function startGame() {
-  cq = 0;
-  loadQ();
+  getAudio(); // unlock audio context on user gesture
+  cq = 0; loadQ();
 }
 
 function loadQ() {
@@ -151,11 +343,15 @@ function loadQ() {
   document.getElementById('ans-count').textContent = '0 risposte';
   document.getElementById('btn-reveal').style.display = 'none';
   const item = Q[cq];
-  document.getElementById('q-num').textContent = `Domanda ${cq+1}/${Q.length}`;
+  document.getElementById('q-num').textContent = `Domanda ${cq+1} / ${Q.length}`;
   document.getElementById('q-text').textContent = item.q;
   const letters = ['A','B','C','D'];
   document.getElementById('opts').innerHTML = item.opts.map((o,i)=>`
-    <div class="opt" id="o${i}"><div class="opt-l">${letters[i]}</div><span>${o}</span></div>
+    <div class="opt-btn" id="o${i}">
+      <span class="opt-letter">${letters[i]}</span>
+      <div class="opt-separator"></div>
+      <span>${o}</span>
+    </div>
   `).join('');
   db.ref(`r/${room}`).update({ phase:'playing', q: cq, qt: item.q, opts: item.opts });
   startTimer();
@@ -173,13 +369,19 @@ function renderDots() {
 function startTimer() {
   clearInterval(tmr);
   let t = SECS;
-  document.getElementById('timer').textContent = t;
-  document.getElementById('timer').className = 'timer-box';
+  const el = document.getElementById('timer');
+  el.textContent = t;
+  el.className = 'timer-display';
   tmr = setInterval(() => {
     t--;
-    document.getElementById('timer').textContent = t;
-    if (t <= 5) document.getElementById('timer').className = 'timer-box red';
-    if (t <= 0) { clearInterval(tmr); db.ref(`r/${room}`).update({phase:'reveal'}); document.getElementById('btn-reveal').style.display = 'block'; }
+    el.textContent = t;
+    if (t <= 5) { el.className = 'timer-display urgent'; playUrgentTick(); }
+    else playTick();
+    if (t <= 0) {
+      clearInterval(tmr);
+      db.ref(`r/${room}`).update({phase:'reveal'});
+      document.getElementById('btn-reveal').style.display = 'block';
+    }
   }, 1000);
 }
 
@@ -188,48 +390,86 @@ function reveal() {
   db.ref(`r/${room}`).update({ phase: 'reveal' });
   const item = Q[cq];
   const letters = ['A','B','C','D'];
-  // Score players
-  const a = answers[cq]||{};
-  Object.entries(a).forEach(([pid, ans]) => {
-    if (parseInt(ans) === item.ok) {
-      db.ref(`r/${room}/players/${pid}/s`).transaction(s => (s||0)+100);
+
+  // Highlight correct first with suspense
+  let i = 0;
+  const highlightOrder = [0,1,2,3].filter(x => x !== item.ok);
+  highlightOrder.push(item.ok);
+
+  function highlightNext() {
+    if (i < highlightOrder.length - 1) {
+      const idx = highlightOrder[i];
+      document.getElementById(`o${idx}`).classList.add('highlight');
+      setTimeout(() => {
+        document.getElementById(`o${idx}`).classList.remove('highlight');
+        i++;
+        setTimeout(highlightNext, 200);
+      }, 400);
+    } else {
+      // reveal correct
+      setTimeout(() => {
+        item.opts.forEach((_,j) => {
+          const el = document.getElementById(`o${j}`);
+          el.classList.remove('highlight');
+          el.classList.add(j === item.ok ? 'correct' : 'wrong');
+        });
+        playCorrect();
+        setTimeout(() => playApplause(), 400);
+
+        // Score
+        const a = answers[cq]||{};
+        Object.entries(a).forEach(([pid, ans]) => {
+          if (parseInt(ans) === item.ok) db.ref(`r/${room}/players/${pid}/s`).transaction(s => (s||0)+100);
+        });
+
+        setTimeout(() => {
+          document.getElementById('anecdote-text').textContent = item.story;
+          document.getElementById('opts-reveal').innerHTML = item.opts.map((o,j)=>`
+            <div class="opt-btn ${j===item.ok?'correct':'wrong'}">
+              <span class="opt-letter">${letters[j]}</span>
+              <div class="opt-separator"></div>
+              <span>${o}</span>
+            </div>
+          `).join('');
+          document.getElementById('btn-next').textContent = cq+1 < Q.length ? 'Prossima domanda →' : 'Classifica finale 🏆';
+          show('s-reveal');
+        }, 2000);
+      }, 300);
     }
-  });
-  // Show reveal screen
-  document.getElementById('anecdote-text').textContent = item.story;
-  document.getElementById('opts-reveal').innerHTML = item.opts.map((o,i)=>`
-    <div class="opt ${i===item.ok?'correct':'wrong'}"><div class="opt-l">${letters[i]}</div><span>${o}</span></div>
-  `).join('');
-  document.getElementById('btn-next').textContent = cq+1 < Q.length ? 'Prossima domanda →' : 'Classifica finale 🏆';
-  show('s-reveal');
+  }
+  highlightNext();
 }
 
-function nextQ() {
-  cq++;
-  loadQ();
-}
+function nextQ() { cq++; loadQ(); }
 
 function endGame() {
   db.ref(`r/${room}`).update({ phase: 'finished' });
   const sorted = Object.values(players).sort((a,b)=>(b.s||0)-(a.s||0));
   const medals = ['🥇','🥈','🥉'];
   document.getElementById('lb-list').innerHTML = sorted.slice(0,10).map((p,i)=>`
-    <div class="lb-row" style="animation-delay:${i*0.1}s">
+    <div class="lb-row" style="animation-delay:${i*0.15}s">
       <div class="lb-rank">${medals[i]||(i+1)}</div>
       <div class="lb-name">${p.n}</div>
       <div class="lb-score">${p.s||0} pt</div>
     </div>
   `).join('');
   show('s-end');
-  confetti();
+  playFanfare();
+  setTimeout(() => { playApplause(); confetti(); }, 800);
 }
 
 function confetti() {
   const c = document.getElementById('confetti-canvas');
   const ctx = c.getContext('2d');
   c.width = innerWidth; c.height = innerHeight;
-  const ps = Array.from({length:120},()=>({x:Math.random()*c.width,y:-10,r:Math.random()*8+4,col:['#F5C842','#C0392B','#2ecc71','#3498db'][Math.floor(Math.random()*4)],vx:(Math.random()-.5)*4,vy:Math.random()*4+2,rot:0,vr:(Math.random()-.5)*6}));
-  function draw(){ctx.clearRect(0,0,c.width,c.height);ps.forEach(p=>{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.col;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);ctx.restore();p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vy+=0.05;});if(ps.some(p=>p.y<c.height))requestAnimationFrame(draw);}
+  const ps = Array.from({length:150},()=>({
+    x:Math.random()*c.width, y:-20,
+    r:Math.random()*8+4,
+    col:['#f0c040','#C0392B','#2ecc71','#3498db','#e056fd','#fff'][Math.floor(Math.random()*6)],
+    vx:(Math.random()-.5)*5, vy:Math.random()*5+2,
+    rot:0, vr:(Math.random()-.5)*8
+  }));
+  function draw(){ ctx.clearRect(0,0,c.width,c.height); ps.forEach(p=>{ ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle=p.col; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r); ctx.restore(); p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vy+=0.06; }); if(ps.some(p=>p.y<c.height)) requestAnimationFrame(draw); }
   draw();
 }
 </script>
