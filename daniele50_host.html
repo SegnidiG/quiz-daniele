@@ -121,8 +121,9 @@ body {
 
 <!-- SETUP -->
 <div id="s-setup" class="screen active">
-  <div class="show-title">🎂 Quiz Daniele</div>
+  <div class="show-title">🎂 Quiz</div>
   <div class="show-sub">50 anni di leggenda</div>
+  <div style="font-family:'Open Sans',sans-serif; font-size:clamp(13px,1.5vw,18px); color:rgba(255,255,255,0.5); letter-spacing:1px; margin-top:-1rem; margin-bottom:0.5rem;">Un quiz multiplayer per scoprire chi conosce davvero Daniele.</div>
   <div class="gold-line"></div>
   <div class="setup-box" style="margin-top:1.5rem">
     <input type="text" id="fb-url" value="https://si-la-vita-default-rtdb.europe-west1.firebasedatabase.app" placeholder="URL Firebase">
@@ -182,11 +183,8 @@ const Q = [
   { q: "Quale squadra tifa Daniele da sempre?", opts: ["Lazio","Napoli","Roma","Juventus"], ok: 2, story: "Giallorosso nel sangue, nelle lacrime e nel cuore. Per Daniele la Roma non è una squadra: è una religione. ❤️🐺" },
   { q: "Come si potrebbe definire il rapporto di Daniele con il denaro?", opts: ["Generoso fino all'eccesso","Imprenditore con spiccato senso degli affari","Spendaccione seriale","Indifferente al denaro"], ok: 1, story: "Daniele non è avaro — ha semplicemente un acutissimo senso per gli affari. C'è differenza, ve lo assicura lui stesso. 💼😄" },
   { q: "In quale anno si svolse la finale Roma-Liverpool che fece piangere Daniele?", opts: ["1982","1983","1984","1985"], ok: 2, story: "30 maggio 1984, Stadio Olimpico di Roma. La Roma perse la sua unica finale di Coppa dei Campioni ai rigori contro il Liverpool. Una ferita ancora aperta. ⚽" },
-  { q: "Chi interpreta Jules Winnfield in Pulp Fiction?", opts: ["Bruce Willis","John Travolta","Samuel L. Jackson","Harvey Keitel"], ok: 2, story: "Samuel L. Jackson nei panni di Jules Winnfield — testo che Daniele conosce meglio del codice fiscale! 📖" },
   { q: "Di quale storico trio comico Daniele è grande fan, seguito dalla Gialappa's?", opts: ["Toti e Tata","Aldo Giovanni e Giacomo","Ficarra e Picone","Boldi e De Sica"], ok: 1, story: "Aldo Giovanni e Giacomo con la voce della Gialappa's: un abbinamento perfetto che ha segnato un'epoca. E Daniele era in prima fila! 🎙️😂" },
-  { q: "In quale celebre sketch la Gialappa's commentava Aldo, Giovanni e Giacomo come arbitri?", opts: ["Il Grande Fratello arbitrale","La Terna Arbitrale","Coppa Italia in famiglia","Arbitri per caso"], ok: 1, story: "La Terna Arbitrale: Aldo, Giovanni e Giacomo arbitri improvvisati, con il commento esilarante della Gialappa's. Daniele conosce ogni battuta! ⚽😂" },
-  { q: "Cosa rappresenta 'Rolando' nel mondo della Gialappa's?", opts: ["Un calciatore inventato","Un portiere preso in giro in Mai dire Gol","Un arbitro famoso","Il tifoso del piano di sopra"], ok: 1, story: "I portieri e calciatori immortalati dalla Gialappa's in Mai dire Gol: Daniele sa le imitazioni meglio degli originali! 📺🤣" },
-  { q: "Oggi Daniele compie...", opts: ["40 anni","45 anni","50 anni","55 anni"], ok: 2, story: "50 anni di storie, risate, lacrime giallorosse, affari geniali, supercazzole e Gialappa's! Sei una leggenda, Daniele! Auguri! 🎂🥂" }
+  { q: "Oggi Daniele compie...", opts: ["40 anni","18 anni","50 anni","1000 mesi"], ok: 2, story: "50 anni di storie, risate, lacrime giallorosse, affari geniali, supercazzole e Gialappa's! Sei una leggenda, Daniele! Auguri! 🎂🥂" }
 ];
 
 const SECS = 20;
@@ -293,6 +291,101 @@ function playFanfare() {
 }
 
 // Stars background
+// HOMEPAGE SOUNDTRACK - epic legendary theme
+function playHomeSoundtrack() {
+  try {
+    const a = getAudio();
+    let t = a.currentTime;
+
+    // Melody notes: epic, slow, legendary feel
+    const melody = [
+      [196, 0.0, 1.2],   // G3
+      [220, 1.2, 1.2],   // A3
+      [246, 2.4, 1.2],   // B3
+      [261, 3.6, 1.8],   // C4
+      [220, 5.4, 1.0],   // A3
+      [196, 6.4, 1.0],   // G3
+      [174, 7.4, 1.8],   // F3
+      [196, 9.2, 1.2],   // G3
+      [220, 10.4, 1.2],  // A3
+      [261, 11.6, 1.2],  // C4
+      [294, 12.8, 1.8],  // D4
+      [261, 14.6, 2.4],  // C4 (hold)
+    ];
+
+    // Bass notes
+    const bass = [
+      [65, 0.0, 2.4],
+      [55, 2.4, 2.4],
+      [65, 4.8, 2.4],
+      [55, 7.2, 2.4],
+      [65, 9.6, 2.4],
+      [58, 12.0, 2.4],
+      [65, 14.4, 2.4],
+    ];
+
+    // Strings pad (sustained chords)
+    const chords = [
+      [[196,246,294], 0.0, 4.8],
+      [[174,220,261], 4.8, 4.8],
+      [[196,246,294], 9.6, 4.8],
+      [[174,220,261], 14.4, 4.8],
+    ];
+
+    melody.forEach(([freq, start, dur]) => {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.connect(g); g.connect(a.destination);
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t + start);
+      g.gain.linearRampToValueAtTime(0.18, t + start + 0.1);
+      g.gain.setValueAtTime(0.18, t + start + dur - 0.2);
+      g.gain.linearRampToValueAtTime(0, t + start + dur);
+      o.start(t + start); o.stop(t + start + dur + 0.1);
+    });
+
+    bass.forEach(([freq, start, dur]) => {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.connect(g); g.connect(a.destination);
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t + start);
+      g.gain.linearRampToValueAtTime(0.22, t + start + 0.2);
+      g.gain.setValueAtTime(0.22, t + start + dur - 0.3);
+      g.gain.linearRampToValueAtTime(0, t + start + dur);
+      o.start(t + start); o.stop(t + start + dur + 0.1);
+    });
+
+    chords.forEach(([freqs, start, dur]) => {
+      freqs.forEach(freq => {
+        const o = a.createOscillator();
+        const g = a.createGain();
+        o.connect(g); g.connect(a.destination);
+        o.type = 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0, t + start);
+        g.gain.linearRampToValueAtTime(0.06, t + start + 0.5);
+        g.gain.setValueAtTime(0.06, t + start + dur - 0.5);
+        g.gain.linearRampToValueAtTime(0, t + start + dur);
+        o.start(t + start); o.stop(t + start + dur + 0.1);
+      });
+    });
+
+    // Loop after 17 seconds
+    window._homeLoop = setTimeout(() => {
+      if (document.getElementById('s-setup').classList.contains('active')) playHomeSoundtrack();
+    }, 17000);
+
+  } catch(e) {}
+}
+
+function stopHomeSoundtrack() {
+  clearTimeout(window._homeLoop);
+  window._homeLoop = null;
+}
+
 function makeStars() {
   const c = document.getElementById('stars');
   for (let i = 0; i < 80; i++) {
@@ -305,12 +398,24 @@ function makeStars() {
 }
 makeStars();
 
+// Auto-start soundtrack on first user interaction
+document.addEventListener('click', function startMusic() {
+  if (document.getElementById('s-setup').classList.contains('active')) {
+    playHomeSoundtrack();
+  }
+  document.removeEventListener('click', startMusic);
+}, { once: true });
+
+// Stop soundtrack when game starts
+const _origSetup = window.setup;
+
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
 function setup() {
+  stopHomeSoundtrack();
   const url = document.getElementById('fb-url').value.trim();
   if (!url) return alert('Inserisci URL Firebase!');
   firebase.initializeApp({ databaseURL: url });
